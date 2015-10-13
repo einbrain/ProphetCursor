@@ -182,33 +182,30 @@ double PointToPlane3D(CameraSpacePoint a, CameraSpacePoint b, CameraSpacePoint c
 	return res;
 }
 
-Vector3D TransformToTouchPlane(Vector3D P, Vector3D N)
-//Transform world point P to a (Y,Z)tilted plane coords system
-//P: Point to transform
-//N: Plane normal
+Vector3D TransformToUVNCam(Vector3D P, Vector3D N, Vector3D BaseP)
+//Transform world point P to a UVN-Cam plane
+//P: Point to be transformed
+//N: Plane normal (Target axis)
+//BaseP: Base point in the plane
 {
-	double	xzLength = pow((N.x*N.x) + (N.z*N.z), 0.5);
+	//Use solved equations
+	Vector3D U = Vector3D(-N.z, 0, N.x);	//Right-Hand axis , in the x-z plane
+	U.Normalize();
 
-	if (xzLength != 0)
-	{
-		double
-			SinTilt = N.y,				// Rotate by x-axis
-			CosTilt = xzLength,
-			SinPan = N.z / xzLength,	// Rotate by y-axis
-			CosPan = N.x / xzLength;
+	Vector3D V = Vector3D(
+		-N.x*N.y*(N.z + 1),
+		N.x*N.x + N.z*N.z - N.x*N.y*N.z,
+		-N.y*N.z);							//Over-Head axis , solved by rotating P around U by 90 degree
+	V.Normalize();
 
-		double
-			X = CosPan*P.x + SinTilt*SinPan*P.y - CosTilt*SinPan*P.z,
-			Y = CosTilt*P.y + SinTilt*P.z,
-			Z = SinPan*P.x - SinTilt*CosPan*P.y + CosTilt*CosPan*P.z;
-
-		return Vector3D(X, Y, Z);
-	}
-	else
-	{
-		// TODO: review this later
-		return Vector3D(0, 0, 0);
-	}
+	// Transform: first translate then rotate
+	P.x -= BaseP.x;
+	P.y -= BaseP.y;
+	P.z -= BaseP.z;
+	return Vector3D(
+		U.x*P.x + U.y*P.y + U.z*P.z,
+		V.x*P.x + V.y*P.y + V.z*P.z,
+		N.x*P.x + N.y*P.y + N.z*P.z);
 }
 
 

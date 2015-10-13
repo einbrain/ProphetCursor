@@ -236,7 +236,7 @@ BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, int &MouseL
 	cv::circle(outputMat, cvHead, 3, cv::Scalar(255, 0, 0), 3, CV_AA, 0);
 	cv::circle(outputMat, cvSpineMid, 3, cv::Scalar(255, 0, 0), 3, CV_AA, 0);
 
-	
+	// Body plane buffer operations
 	hQueueLeftShoulder.push_back(m_aBufferedJoints[JointType_ShoulderLeft].Position);
 	while (hQueueLeftShoulder.size() > BODY_JOINT_BUF_LENGTH) hQueueLeftShoulder.pop_front();
 	CameraSpacePoint AvgLeftPos = CSPointAverage(hQueueLeftShoulder);
@@ -261,17 +261,19 @@ BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, int &MouseL
 
 	Vector3D bodyPlaneNormal = CreatePolygonNormal(
 		Vector3D(AvgRightPos),
-		Vector3D(AvgLeftPos),
-		Vector3D(AvgMidPos)
+		Vector3D(AvgMidPos),
+		Vector3D(AvgLeftPos)
 	);
 
-	Vector3D relativeRHandPosition = TransformToTouchPlane(
+	Vector3D relativeRHandPosition = TransformToUVNCam(
 		Vector3D(m_aBufferedJoints[JointType_HandRight].Position),
-		bodyPlaneNormal
+		bodyPlaneNormal,
+		Vector3D(m_aBufferedJoints[JointType_SpineMid].Position)
 	);
 
-	outputPnt.x = int(relativeRHandPosition.x * 5000);
-	outputPnt.y = int(relativeRHandPosition.y * -5000);
+	// convert kinect axes to screen ones
+	outputPnt.x = int(relativeRHandPosition.x * 3000);
+	outputPnt.y = int(relativeRHandPosition.y * -3000); 
 
 	// - ---------------------------------------
 

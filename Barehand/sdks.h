@@ -227,7 +227,7 @@ public:
 	const static int	HAND_DEPTH_RANGE = 7;
 	const static int	KINECT_TICK_LIFE_DEFAULT = 200;
 	const double		ARM_STRETCH_THRESHOULD = 0.30f;
-	const static int	BODY_JOINT_BUF_LENGTH = 200;
+	const static int	BODY_JOINT_BUF_LENGTH = 50;
 	// ==============
 	const static int MAX_PALM_AREA = 30000;
 	double MOUSE_PRESS_THRESH;
@@ -445,5 +445,5 @@ bool findTop(cv::Point& top, int& topVal, cv::Mat* src, cv::Rect rect);
 double PointToLine3D(CameraSpacePoint a, CameraSpacePoint b, CameraSpacePoint p);
 Vector3D CreatePolygonNormal(Vertex3D A, Vertex3D B, Vertex3D C);
 double PointToPlane3D(CameraSpacePoint a, CameraSpacePoint b, CameraSpacePoint c, CameraSpacePoint p);
-Vector3D TransformToTouchPlane(Vector3D P, Vector3D N);
+Vector3D TransformToUVNCam(Vector3D P, Vector3D N, Vector3D BaseP);
 CameraSpacePoint CSPointAverage(std::deque<CameraSpacePoint> pntQueue);
