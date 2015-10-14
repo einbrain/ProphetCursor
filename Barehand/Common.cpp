@@ -54,19 +54,27 @@ bool findTop(cv::Point& top, int& topVal, cv::Mat* src, cv::Rect rect){
 
 	topVal = 65535;
 
-	if(!src->empty())
-	for(int i = rect.tl().y; i < rect.br().y; ++i){
-		for(int j = rect.tl().x; j < rect.br().x; ++j){
-			{
-				Int16 curVarVec = Convert::ToInt16((src->at<Int16>(cv::Point(j, i))) * 255.0f / 8191.0f);
-				if(curVarVec < topVal && curVarVec > 0)
-				{
-					topVal = curVarVec;
-					x = j;
-					y = i;
-					bFound = true;
+	if (!src->empty()){
+		try
+		{
+			for (int i = rect.tl().y; i < rect.br().y; ++i){
+				for (int j = rect.tl().x; j < rect.br().x; ++j){
+						{
+							Int16 curVarVec = Convert::ToInt16((src->at<Int16>(cv::Point(j, i))) * 255.0f / 8191.0f);
+							if (curVarVec < topVal && curVarVec > 0)
+							{
+								topVal = curVarVec;
+								x = j;
+								y = i;
+								bFound = true;
+							}
+						}
 				}
 			}
+		}
+		catch(...)
+		{
+			// DO NOTHING
 		}
 	}
 	//ht.nNose = src->at<Int16>(0,0);

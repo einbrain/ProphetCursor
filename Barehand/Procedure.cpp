@@ -92,7 +92,11 @@ bool LaserTracker::findLaserCoordinate(cv::Point &TargetCoordinate){
 
 
 // - Hand Processing ----------------------------
-BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, int &MouseLMB){
+BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, int &MouseLMB)
+// RESULT: found hand position or not
+{
+	bool functionRes = false;
+
 	if(framecount == 0){
 		pretime = clock();
 	}
@@ -191,12 +195,13 @@ BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, int &MouseL
 	
 
 	// - Body joints ---------------------------
-	// Some weird naming from Microsoft....
+	// Some weird naming principles from Microsoft...
 	//		CameraSpacePoint:	3D coordinates
 	//		DepthSpacePoint:	2D coordinates relative to the (Depth) Image
 	cv::Point2f cvHead, cvLShoulder, cvRShoulder, cvRHand, cvSpineMid;
 	DepthSpacePoint dspHead, dspLShoulder, dspRShoulder, dspHand, dspSpineMid;
 
+	// Acquire skeleton/body data and copy to buffer if successful.
 	Joint joints[JointType_Count];
 	BOOLEAN bSkelRes = this->GetXthBody(joints, 1);
 	if (bSkelRes)
@@ -204,178 +209,111 @@ BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, int &MouseL
 		std::copy(std::begin(joints), std::end(joints), std::begin(m_aBufferedJoints));
 		this->m_nKinectTickLife = KINECT_TICK_LIFE_DEFAULT;
 	}
+
+	// Control the life time of the body data buffer
 	--m_nKinectTickLife;
+	boolean bSkelSufficient = true; // body data sufficient
 	if (m_nKinectTickLife <= 0)
 	{
-		outputMat.copyTo(outputMatBuffer);
-		depthmask.copyTo(depthmaskBuffer);
-		return false;
+		bSkelSufficient = false;	// body data insufficient, i.e. absence of user for a while
 	}
 
-	m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_ShoulderLeft].Position, &dspLShoulder);
-	m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_ShoulderRight].Position, &dspRShoulder);
-	m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_Head].Position, &dspHead);
-	m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_SpineMid].Position, &dspSpineMid);
-	m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_HandRight].Position, &dspHand);
-	cvHead.x = dspHead.X;
-	cvHead.y = dspHead.Y;
-	cvLShoulder.x = dspLShoulder.X;
-	cvLShoulder.y = dspLShoulder.Y;
-	cvRShoulder.x = dspRShoulder.X;
-	cvRShoulder.y = dspRShoulder.Y;
-	cvRHand.x = dspHand.X;
-	cvRHand.y = dspHand.Y;
-	cvSpineMid.x = dspSpineMid.X;
-	cvSpineMid.y = dspSpineMid.Y;
-
-	cv::Point polyPts[] = { cvLShoulder, cvRShoulder, cvSpineMid };
-	cv::fillConvexPoly(outputMat, polyPts, 3, cv::Scalar(0, 255, 255, 50.0));
-	cv::circle(outputMat, cvRHand, 3, cv::Scalar(0, 0, 255), 3, CV_AA, 0);
-	cv::circle(outputMat, cvLShoulder, 3, cv::Scalar(0, 255, 0), 3, CV_AA, 0);
-	cv::circle(outputMat, cvRShoulder, 3, cv::Scalar(0, 255, 0), 3, CV_AA, 0);
-	cv::circle(outputMat, cvHead, 3, cv::Scalar(255, 0, 0), 3, CV_AA, 0);
-	cv::circle(outputMat, cvSpineMid, 3, cv::Scalar(255, 0, 0), 3, CV_AA, 0);
-
-	// Body plane buffer operations
-	hQueueLeftShoulder.push_back(m_aBufferedJoints[JointType_ShoulderLeft].Position);
-	while (hQueueLeftShoulder.size() > BODY_JOINT_BUF_LENGTH) hQueueLeftShoulder.pop_front();
-	CameraSpacePoint AvgLeftPos = CSPointAverage(hQueueLeftShoulder);
-
-	hQueueRightShoulder.push_back(m_aBufferedJoints[JointType_ShoulderRight].Position);
-	while (hQueueRightShoulder.size() > BODY_JOINT_BUF_LENGTH) hQueueRightShoulder.pop_front();
-	CameraSpacePoint AvgRightPos = CSPointAverage(hQueueRightShoulder);
-
-	hQueueSpinMid.push_back(m_aBufferedJoints[JointType_SpineMid].Position);
-	while (hQueueSpinMid.size() > BODY_JOINT_BUF_LENGTH) hQueueSpinMid.pop_front();
-	CameraSpacePoint AvgMidPos = CSPointAverage(hQueueSpinMid);
-
-	// TODO: calculate average points
-	
-	armStretchDist = PointToPlane3D
-	(
-		AvgRightPos,
-		AvgMidPos,
-		AvgLeftPos,
-		m_aBufferedJoints[JointType_HandRight].Position
-	);
-
-	Vector3D bodyPlaneNormal = CreatePolygonNormal(
-		Vector3D(AvgRightPos),
-		Vector3D(AvgMidPos),
-		Vector3D(AvgLeftPos)
-	);
-
-	Vector3D relativeRHandPosition = TransformToUVNCam(
-		Vector3D(m_aBufferedJoints[JointType_HandRight].Position),
-		bodyPlaneNormal,
-		Vector3D(m_aBufferedJoints[JointType_SpineMid].Position)
-	);
-
-	// convert kinect axes to screen ones
-	outputPnt.x = int(relativeRHandPosition.x * 3000);
-	outputPnt.y = int(relativeRHandPosition.y * -3000); 
-
-	// - ---------------------------------------
-
-	// - draw head square ---------------------
-	cv::Rect ROI, headROI;
-	//GetUnboundedROI(headROI, cvHead, 61.744 / m_aBufferedJoints[JointType_Head].Position.Z, KINECT_WIDTH, KINECT_HEIGHT);	//headROI
-	//cv::rectangle(outputMat, headROI, cv::Scalar(255, 255, 0), 2);
-
-	
-	if (armStretchDist > ARM_STRETCH_THRESHOULD)	//rule for touch event toggling
+	if (bSkelSufficient) // Do body drawing and data sending only when body data is sufficient.
 	{
-		TargetCoordinate = outputPnt;
+		m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_ShoulderLeft].Position, &dspLShoulder);
+		m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_ShoulderRight].Position, &dspRShoulder);
+		m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_Head].Position, &dspHead);
+		m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_SpineMid].Position, &dspSpineMid);
+		m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_HandRight].Position, &dspHand);
+		cvHead.x = dspHead.X;
+		cvHead.y = dspHead.Y;
+		cvLShoulder.x = dspLShoulder.X;
+		cvLShoulder.y = dspLShoulder.Y;
+		cvRShoulder.x = dspRShoulder.X;
+		cvRShoulder.y = dspRShoulder.Y;
+		cvRHand.x = dspHand.X;
+		cvRHand.y = dspHand.Y;
+		cvSpineMid.x = dspSpineMid.X;
+		cvSpineMid.y = dspSpineMid.Y;
 
-		double cop = 0.0;
-		if (GetUnboundedROI(ROI, cvRHand, (int)(51.200 / m_aBufferedJoints[JointType_HandRight].Position.Z), KINECT_WIDTH, KINECT_HEIGHT))	//handROI
-		try{
-			cv::Point handTop;
-			int nHandTop;
-			if (findTop(handTop, nHandTop, &depthmap, ROI))
+		cv::Point polyPts[] = { cvLShoulder, cvRShoulder, cvSpineMid };
+		cv::fillConvexPoly(outputMat, polyPts, 3, cv::Scalar(0, 255, 255, 50.0));
+		cv::circle(outputMat, cvRHand, 3, cv::Scalar(0, 0, 255), 3, CV_AA, 0);
+		cv::circle(outputMat, cvLShoulder, 3, cv::Scalar(0, 255, 0), 3, CV_AA, 0);
+		cv::circle(outputMat, cvRShoulder, 3, cv::Scalar(0, 255, 0), 3, CV_AA, 0);
+		cv::circle(outputMat, cvHead, 3, cv::Scalar(255, 0, 0), 3, CV_AA, 0);
+		cv::circle(outputMat, cvSpineMid, 3, cv::Scalar(255, 0, 0), 3, CV_AA, 0);
+
+		// Body plane buffer operations
+		hQueueLeftShoulder.push_back(m_aBufferedJoints[JointType_ShoulderLeft].Position);
+		while (hQueueLeftShoulder.size() > BODY_JOINT_BUF_LENGTH) hQueueLeftShoulder.pop_front();
+		CameraSpacePoint AvgLeftPos = CSPointAverage(hQueueLeftShoulder);
+
+		hQueueRightShoulder.push_back(m_aBufferedJoints[JointType_ShoulderRight].Position);
+		while (hQueueRightShoulder.size() > BODY_JOINT_BUF_LENGTH) hQueueRightShoulder.pop_front();
+		CameraSpacePoint AvgRightPos = CSPointAverage(hQueueRightShoulder);
+
+		hQueueSpinMid.push_back(m_aBufferedJoints[JointType_SpineMid].Position);
+		while (hQueueSpinMid.size() > BODY_JOINT_BUF_LENGTH) hQueueSpinMid.pop_front();
+		CameraSpacePoint AvgMidPos = CSPointAverage(hQueueSpinMid);
+
+		armStretchDist = PointToPlane3D(
+			AvgRightPos,
+			AvgMidPos,
+			AvgLeftPos,
+			m_aBufferedJoints[JointType_HandRight].Position
+			);
+
+		Vector3D bodyPlaneNormal = CreatePolygonNormal(
+			Vector3D(AvgRightPos),
+			Vector3D(AvgMidPos),
+			Vector3D(AvgLeftPos)
+			);
+
+		Vector3D relativeRHandPosition = TransformToUVNCam(
+			Vector3D(m_aBufferedJoints[JointType_HandRight].Position),
+			bodyPlaneNormal,
+			Vector3D(m_aBufferedJoints[JointType_SpineMid].Position)
+			);
+
+		// convert kinect axes to screen ones
+		outputPnt.x = int(relativeRHandPosition.x * 3000);
+		outputPnt.y = int(relativeRHandPosition.y * -3000);
+
+		// - ---------------------------------------
+		if (armStretchDist > ARM_STRETCH_THRESHOULD)	//rule for touch event toggling
+		{
+			TargetCoordinate = outputPnt;
+
+			cv::Rect ROI;
+			if (GetUnboundedROI(ROI, cvRHand, (int)(51.200 / m_aBufferedJoints[JointType_HandRight].Position.Z), KINECT_WIDTH, KINECT_HEIGHT))	//handROI
 			{
-				thresh_low = DEPTH_THRESHOLD_MAXVAL - ((nHandTop + HAND_DEPTH_RANGE));
-				thresh_high = DEPTH_THRESHOLD_MAXVAL - ((nHandTop - HAND_DEPTH_RANGE));
+				try
+				{
+					cv::Point handTop;
+					int nHandTop;
+					if (findTop(handTop, nHandTop, &depthmap, ROI))
+					{
+						thresh_low = DEPTH_THRESHOLD_MAXVAL - ((nHandTop + HAND_DEPTH_RANGE));
+						thresh_high = DEPTH_THRESHOLD_MAXVAL - ((nHandTop - HAND_DEPTH_RANGE));
+					}
+					cv::rectangle(outputMat, ROI, cv::Scalar(0, 255, 0), 2);
+				}
+				catch (...)
+				{
+					System::Media::SystemSound ^sound = System::Media::SystemSounds::Exclamation;
+					sound->Play();
+				}
 			}
 
-			depthmask.adjustROI(ROI.tl().y, ROI.br().y - 1, ROI.tl().x, ROI.br().x - 1);
+			functionRes = true;
+		} // if (armStretchDist > ARM_STRETCH_THRESHOULD)
 
-			cv::rectangle(outputMat, ROI, cv::Scalar(0, 255, 0), 2); 
-
-			vector< vector<cv::Point> > handContours;
-			
-			////hand shape check
-			//double maxHandArea;
-			//UINT maxHandIdx;
-			//vector< vector<cv::Point> > handContours;
-			//cv::findContours(Mat(depthmask, ROI), handContours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-			//cv::Point handCoordinate = findMaxAreaCoordinate(handContours, maxHandArea, maxHandIdx);
-
-			//
-			//if( maxHandArea > 0 ) {
-			//	cv::drawContours(outputMat, handContours, maxHandIdx, cv::Scalar(255,255,0), 2);
-			//	handContourLength = cv::arcLength((cv::Mat)handContours.at(maxHandIdx),true);
-			//	shapeRatio = pow(handContourLength, 2.0) / maxHandArea;
-
-			//	areaRatio = cv::contourArea((cv::Mat)handContours.at(maxHandIdx)) / ROI.area();
-			//	areaQueue->Enqueue(areaRatio);
-			//	if(areaQueue->Count > 3) areaQueue->Dequeue();
-			//	cop = shapeComplexity(handContours.at(maxHandIdx)) / sqrt(pow((double)ROI.height, 2.0) + pow((double)ROI.width, 2.0));
-			//	
-			//}
-			//else{
-			//	shapeRatio = 255.0;
-			//	areaRatio = 1.0;
-			//}
-
-			//MouseLMB = 0;
-			//if( shapeRatio < threshLMB && cop < 100000.0 ){
-			//	//if(checkAreaDec(areaQueue) && mousedownflag != true){
-			//	if(mousedownflag != true){
-			//		mousedownflag = true;
-			//		MouseLMB = 1;
-			//	}
-			//}
-			//else{
-			//	//if(checkAreaInc(areaQueue) && mousedownflag != false){
-			//	if(mousedownflag != false){
-			//		mousedownflag = false;
-			//		MouseLMB = 2;
-			//	}
-			//}
-
-			//sprintf_s(str, sizeof(str), "area ratio: %3.2f", cop);
-			//cv::putText(outputMat, str, cv::Point(12, 52), 2, 1.0, cv::Scalar(0, 0, 0));
-			//cv::putText(outputMat, str, cv::Point(10, 50), 2, 1.0, cv::Scalar(0, 255, 255));
-
-			//sprintf_s(str, sizeof(str), mousedownflag ? "DOWN" : "UP");
-			//cv::putText(outputMat, str, cv::Point(12, 102), 2, 1.0, cv::Scalar(0, 0, 0));
-			//cv::putText(outputMat, str, cv::Point(10, 100), 2, 1.0, cv::Scalar(255, 255, 0));
-		}
-		catch(System::Exception^){
-			System::Media::SystemSound ^sound = System::Media::SystemSounds::Exclamation;
-			sound->Play();
-			//MessageBox::Show(e->ToString());
-		}
-
-		outputMat.copyTo(outputMatBuffer);
-		depthmask.adjustROI(1, KINECT_HEIGHT, 1, KINECT_WIDTH);
-		depthmask.copyTo(depthmaskBuffer);
-
-		framecount ++;
-		if(framecount>=5){	//count every 5 frames
-			curtime = clock();
-			fps = 5.0 / ((double)(curtime - pretime) / CLOCKS_PER_SEC);
-			framecount=0;
-		}
-
-		return true;
-	}
+	} // bSkelSufficient == true
 
 
 	outputMat.copyTo(outputMatBuffer);
 	depthmask.copyTo(depthmaskBuffer);
-
 
 	framecount ++;
 	if(framecount>=5){	//count every 5 frames
@@ -384,7 +322,7 @@ BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, int &MouseL
 		framecount=0;
 	}
 
-	return false;
+	return functionRes;
 }
 
 
