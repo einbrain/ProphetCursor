@@ -20,7 +20,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-    <CLRSupport>Pure</CLRSupport>
+    <CLRSupport>true</CLRSupport>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -49,12 +49,15 @@
     <LinkIncremental>true</LinkIncremental>
     <ExecutablePath>$(VC_ExecutablePath_x86);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);D:\Dev\opencv\build\x86\vc12\bin</ExecutablePath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Dev\opencv\build\include;$(KINECTSDK20_DIR)\inc</IncludePath>
-    <LibraryPath>$(KINECTSDK20_DIR)\lib\x86;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);D:\Dev\opencv\build\x86\vc12\lib</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);D:\Dev\opencv\build\x86\vc12\lib;$(KINECTSDK20_DIR)\lib\x86</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
+    <ExecutablePath>$(VC_ExecutablePath_x86);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);D:\Dev\opencv\build\x86\vc12\bin</ExecutablePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Dev\opencv\build\include;$(KINECTSDK20_DIR)\inc</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);D:\Dev\opencv\build\x86\vc12\lib;$(KINECTSDK20_DIR)\lib\x86</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

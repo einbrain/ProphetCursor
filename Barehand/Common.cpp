@@ -221,7 +221,7 @@ CameraSpacePoint CSPointAverage(std::deque<CameraSpacePoint> pntQueue)
 {
 	float x = 0, y = 0, z = 0;
 
-	for (int i = 0; i < pntQueue.size(); ++i)
+	for (unsigned int i = 0; i < pntQueue.size(); ++i)
 	{
 		x += pntQueue.at(i).X;
 		y += pntQueue.at(i).Y;
