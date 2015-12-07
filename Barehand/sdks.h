@@ -121,6 +121,7 @@ public:
 						background;
 
 	cv::Point			outputPnt;
+	cv::Point			currentLargestDotPnt;
 	double				fps;
 	short				framecount;
 
@@ -145,6 +146,7 @@ public:
 		background = Mat(CAM_HEIGHT, CAM_WIDTH, CV_8UC3);
 		outputMat = Mat(CAM_HEIGHT, CAM_WIDTH, CV_8UC3);
 		outputPnt = cv::Point(0, 0);
+		currentLargestDotPnt = cv::Point(0, 0);
 
 		screenLT = cv::Point( 0, 0 );
 		screenLB = cv::Point( 0, CAM_HEIGHT - 1 );
@@ -172,19 +174,24 @@ public:
 	void setCorners(int idx){
 		switch(idx){
 			case 0:
-				screenLT = outputPnt;
+				//Commentted-out: using single laser-dot method
+				//screenLT = outputPnt;
+				screenLT = currentLargestDotPnt;
 				flagLT = true;
 				break;
 			case 1:
-				screenLB = outputPnt;
+				//screenLB = outputPnt;
+				screenLB = currentLargestDotPnt;
 				flagLB = true;
 				break;
 			case 2:
-				screenRT = outputPnt;
+				//screenRT = outputPnt;
+				screenRT = currentLargestDotPnt;
 				flagRT = true;
 				break;
 			case 3:
-				screenRB = outputPnt;
+				//screenRB = outputPnt;
+				screenRB = currentLargestDotPnt;
 				flagRB = true;
 				break;
 			default:
@@ -437,6 +444,7 @@ extern LaserTracker lt;
 extern HandTracker ht;
 
 cv::Point findMaxAreaCoordinate(vector<vector<cv::Point> > contours, double &maxArea, UINT &maxidx);
+cv::Point findTop2AreaCoordinate(vector<vector<cv::Point> > contours, double &maxArea, UINT &maxidx, cv::Point &maxCoord);
 bool GetUnboundedROI(cv::Rect& ROI, cv::Point center, int rectRadius, int camWidth, int camHeight);
 bool findTop(cv::Point& top, int& topVal, cv::Mat* src, cv::Rect rect);
 //bool checkAreaInc(Queue^ queue);

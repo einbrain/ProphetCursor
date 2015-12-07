@@ -186,7 +186,7 @@ System::Void Form1::button_start_Click(System::Object^  sender, System::EventArg
 				pictureBox2->Image = gcnew Bitmap(lt.outputMatBuffer.cols, lt.outputMatBuffer.rows, lt.outputMatBuffer.step, System::Drawing::Imaging::PixelFormat::Format24bppRgb, IntPtr(lt.outputMatBuffer.data));
 			}
 
-			toolStripStatusLabel2->Text = System::String::Format("{0},{1}", lt.outputPnt.x, lt.outputPnt.y);
+			toolStripStatusLabel2->Text = System::String::Format("{0},{1},{2},{3}", lt.outputPnt.x, lt.outputPnt.y, lt.currentLargestDotPnt.x, lt.currentLargestDotPnt.y);
 		}
 
 		{// - Hand controls ---------------
