@@ -446,6 +446,7 @@ cv::Point findTop2AreaCoordinate(vector<vector<cv::Point> > contours, double &ma
 			second_x = (second_x + max_x) / 2;
 			second_y = (second_y + max_y) / 2;
 		}
+		else maxArea = 0; //return no area info if all dots are not shown
 	}
 
 	return cv::Point(second_x, second_y);
