@@ -6,7 +6,7 @@
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-BOOLEAN HandTracker::GetXthBody(Joint* outJoints, int bodyIndex)
+BOOLEAN HandTracker::GetNearestBody(Joint* outJoints, HandState &handstate)
 {
 	if (m_pBodyFrameReader == NULL)
 	{
@@ -56,6 +56,10 @@ BOOLEAN HandTracker::GetXthBody(Joint* outJoints, int bodyIndex)
 			{
 				//Output
 				hr = ppBodies[nNearestIndex]->GetJoints(JointType_Count, outJoints);
+				if (SUCCEEDED(hr))
+				{
+					hr = ppBodies[nNearestIndex]->get_HandRightState(&handstate);
+				}
 			}
 		}//if got bodies
 

@@ -247,6 +247,7 @@ public:
 	USHORT*				m_pDepthImage;
 	HRESULT				m_hSensorInitResult;
 	Joint				m_aBufferedJoints[JointType_Count];
+	HandState			m_BufferedRHandState;
 	LONG				m_lSkeletonRecongCnt;
 	INT32				m_nKinectTickLife;
 	
@@ -313,7 +314,7 @@ public:
 		m_pDepthImage = new USHORT[KINECT_HEIGHT * KINECT_WIDTH];
 		m_hSensorInitResult = InitSensor();
 		m_lSkeletonRecongCnt = 0;
-		m_nKinectTickLife = KINECT_TICK_LIFE_DEFAULT;
+		m_nKinectTickLife = 0;
 
 
 		cvInitFont(&font, 2, 1.0, 1.0, 0, 2);
@@ -339,8 +340,8 @@ public:
 	}
 
 	HRESULT InitSensor();
-	BOOLEAN findHandCoordinate(cv::Point &TargetCoordinate, int &MouseLMB);
-	BOOLEAN GetXthBody(Joint* outJoints, int bodyIndex);
+	BOOLEAN findHandCoordinate(cv::Point &TargetCoordinate, byte &MouseLMB);
+	BOOLEAN GetNearestBody(Joint* outJoints, HandState &handstate);
 };
 
 

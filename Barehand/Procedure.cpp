@@ -92,7 +92,7 @@ bool LaserTracker::findLaserCoordinate(cv::Point &TargetCoordinate){
 
 
 // - Hand Processing ----------------------------
-BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, int &MouseLMB)
+BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, byte &MouseLMB)
 // RESULT: found hand position or not
 {
 	bool functionRes = false;
@@ -203,23 +203,39 @@ BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, int &MouseL
 
 	// Acquire skeleton/body data and copy to buffer if successful.
 	Joint joints[JointType_Count];
-	BOOLEAN bSkelRes = this->GetXthBody(joints, 1);
+	HandState rightHandState = HandState::HandState_Unknown;
+	BOOLEAN bSkelRes = this->GetNearestBody(joints, rightHandState);
 	if (bSkelRes)
 	{
 		std::copy(std::begin(joints), std::end(joints), std::begin(m_aBufferedJoints));
 		this->m_nKinectTickLife = KINECT_TICK_LIFE_DEFAULT;
+		m_BufferedRHandState = rightHandState;
 	}
-
-	// Control the life time of the body data buffer
-	--m_nKinectTickLife;
-	boolean bSkelSufficient = true; // body data sufficient
-	if (m_nKinectTickLife <= 0)
+	
+	--m_nKinectTickLife;		// Control the life time of the body data buffer
+	if (m_nKinectTickLife>0)	// Do body drawing and data sending only when body data is sufficient.
 	{
-		bSkelSufficient = false;	// body data insufficient, i.e. absence of user for a while
-	}
+		cv::Scalar handDotColor = cv::Scalar(255,255,255);
 
-	if (bSkelSufficient) // Do body drawing and data sending only when body data is sufficient.
-	{
+		switch (m_BufferedRHandState)
+		{
+		case HandState::HandState_Open:
+			handDotColor = cv::Scalar(0, 0, 255);
+			MouseLMB = 0;
+			break;
+		case HandState::HandState_Closed:
+			handDotColor = cv::Scalar(0, 255, 0);
+			MouseLMB = 1;
+			break;
+		case HandState::HandState_Lasso:
+			handDotColor = cv::Scalar(255, 0, 0);
+			MouseLMB = 2;
+			break;
+		default:
+			handDotColor = cv::Scalar(255, 255, 255);
+			break;
+		}
+
 		m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_ShoulderLeft].Position, &dspLShoulder);
 		m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_ShoulderRight].Position, &dspRShoulder);
 		m_pCoordinateMapper->MapCameraPointToDepthSpace(m_aBufferedJoints[JointType_Head].Position, &dspHead);
@@ -238,7 +254,7 @@ BOOLEAN HandTracker::findHandCoordinate(cv::Point &TargetCoordinate, int &MouseL
 
 		cv::Point polyPts[] = { cvLShoulder, cvRShoulder, cvSpineMid };
 		cv::fillConvexPoly(outputMat, polyPts, 3, cv::Scalar(0, 255, 255, 50.0));
-		cv::circle(outputMat, cvRHand, 3, cv::Scalar(0, 0, 255), 3, CV_AA, 0);
+		cv::circle(outputMat, cvRHand, 3, handDotColor, 3, CV_AA, 0);
 		cv::circle(outputMat, cvLShoulder, 3, cv::Scalar(0, 255, 0), 3, CV_AA, 0);
 		cv::circle(outputMat, cvRShoulder, 3, cv::Scalar(0, 255, 0), 3, CV_AA, 0);
 		cv::circle(outputMat, cvHead, 3, cv::Scalar(255, 0, 0), 3, CV_AA, 0);
@@ -501,7 +517,7 @@ void HandProcess(void *dummy){
 	Sleep(1000);
 	while(flag){
 		cv::Point palmCoordinate = cv::Point(0, 0);
-		int mouseLMB = 0;
+		byte mouseLMB = 0;
 
 		if( ht.findHandCoordinate(palmCoordinate, mouseLMB) ){
 			//Sending movement through UDP
@@ -530,25 +546,11 @@ void HandProcess(void *dummy){
 
 			// - Left mouse button function --------------
 			// Send through UDP
-			// Format: Byte(type) + bool
+			// Format: Byte(type) + Byte(hand state)
 			char mouseEventBuffer[2];
-			switch(mouseLMB){
-					case 0:
-						break;
-					case 1:
-						mouseEventBuffer[0] = 0x2;
-						mouseEventBuffer[1] = true;
-						sendto(sendSock, mouseEventBuffer, sizeof(mouseEventBuffer), 0, (sockaddr*)&addr, sizeof(addr));
-						break;
-					case 2:
-						mouseEventBuffer[0] = 0x2;
-						mouseEventBuffer[1] = false;
-						sendto(sendSock, mouseEventBuffer, sizeof(mouseEventBuffer), 0, (sockaddr*)&addr, sizeof(addr));
-						break;
-					default:
-						break;
-
-			}
+			mouseEventBuffer[0] = 0x2;
+			mouseEventBuffer[1] = mouseLMB;
+			sendto(sendSock, mouseEventBuffer, sizeof(mouseEventBuffer), 0, (sockaddr*)&addr, sizeof(addr));
 			// - -----------------------------------------
 		}
 		else{
