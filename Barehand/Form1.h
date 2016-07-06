@@ -288,7 +288,7 @@ namespace Barehand {
 			this->button_bgrefresh->Name = L"button_bgrefresh";
 			this->button_bgrefresh->Size = System::Drawing::Size(90, 158);
 			this->button_bgrefresh->TabIndex = 13;
-			this->button_bgrefresh->Text = L"Background refresh";
+			this->button_bgrefresh->Text = L"Manual BG Refresh";
 			this->button_bgrefresh->UseVisualStyleBackColor = true;
 			this->button_bgrefresh->Click += gcnew System::EventHandler(this, &Form1::button_bgrefresh_Click);
 			// 
@@ -359,13 +359,13 @@ namespace Barehand {
 			// 
 			this->toolStripStatusLabel2->Name = L"toolStripStatusLabel2";
 			this->toolStripStatusLabel2->RightToLeft = System::Windows::Forms::RightToLeft::No;
-			this->toolStripStatusLabel2->Size = System::Drawing::Size(39, 17);
+			this->toolStripStatusLabel2->Size = System::Drawing::Size(34, 17);
 			this->toolStripStatusLabel2->Text = L"Laser";
 			// 
 			// toolStripStatusLabel3
 			// 
 			this->toolStripStatusLabel3->Name = L"toolStripStatusLabel3";
-			this->toolStripStatusLabel3->Size = System::Drawing::Size(37, 17);
+			this->toolStripStatusLabel3->Size = System::Drawing::Size(36, 17);
 			this->toolStripStatusLabel3->Text = L"Hand";
 			// 
 			// comboBox1

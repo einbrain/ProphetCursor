@@ -54,7 +54,12 @@ bool LaserTracker::findLaserCoordinate(cv::Point &TargetCoordinate){
 
 	double maxLaserArea;
 	UINT maxLaserIdx;
-	cv::Point coordinate = findTop2AreaCoordinate(spotContours, maxLaserArea, maxLaserIdx,currentLargestDotPnt);
+
+	// Choose from:
+	// 1. Detecting center position of 2 dots
+	//cv::Point coordinate = findTop2AreaCoordinate(spotContours, maxLaserArea, maxLaserIdx, currentLargestDotPnt);
+	// 2. Detecting single dot pos
+	cv::Point coordinate = findMaxAreaCoordinate(spotContours, maxLaserArea, maxLaserIdx, currentLargestDotPnt);
 
 	if(maxLaserArea>0){
 		// draw a green circle
@@ -403,7 +408,7 @@ HRESULT HandTracker::InitSensor()
 //----------------------------------------------------------------
 
 // find the center of the largest area 
-cv::Point findMaxAreaCoordinate( vector<vector<cv::Point> > contours, double &maxArea, UINT &maxidx ) {
+cv::Point findMaxAreaCoordinate(vector<vector<cv::Point> > contours, double &maxArea, UINT &maxidx, cv::Point &maxCoord) {
 	maxidx = contours.size();
 	maxArea = 0;
 	int max_x = 0;
@@ -422,6 +427,8 @@ cv::Point findMaxAreaCoordinate( vector<vector<cv::Point> > contours, double &ma
 		max_y = moment.m01 / moment.m00;
 	}
 
+	maxCoord.x = max_x;
+	maxCoord.y = max_y;
 	return cv::Point(max_x, max_y);
 }
 

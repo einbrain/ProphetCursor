@@ -444,7 +444,7 @@ extern sockaddr_in addr;
 extern LaserTracker lt;
 extern HandTracker ht;
 
-cv::Point findMaxAreaCoordinate(vector<vector<cv::Point> > contours, double &maxArea, UINT &maxidx);
+cv::Point findMaxAreaCoordinate(vector<vector<cv::Point> > contours, double &maxArea, UINT &maxidx, cv::Point &maxCoord);
 cv::Point findTop2AreaCoordinate(vector<vector<cv::Point> > contours, double &maxArea, UINT &maxidx, cv::Point &maxCoord);
 bool GetUnboundedROI(cv::Rect& ROI, cv::Point center, int rectRadius, int camWidth, int camHeight);
 bool findTop(cv::Point& top, int& topVal, cv::Mat* src, cv::Rect rect);

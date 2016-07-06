@@ -196,7 +196,7 @@ System::Void Form1::button_start_Click(System::Object^  sender, System::EventArg
 			if(!ht.depthmaskBuffer.empty()){
 				pictureBox4->Image = gcnew Bitmap(ht.depthmaskBuffer.cols, ht.depthmaskBuffer.rows, ht.depthmaskBuffer.step, System::Drawing::Imaging::PixelFormat::Format8bppIndexed, IntPtr(ht.depthmaskBuffer.data));
 			}
-			toolStripStatusLabel3->Text = System::String::Format("{0},{1},{2}", ht.outputPnt.x, ht.outputPnt.y, ht.mousedownflag);
+			toolStripStatusLabel3->Text = System::String::Format("{0},{1},{2},Z:", ht.outputPnt.x, ht.outputPnt.y, ht.mousedownflag);
 		}
 
 		Sleep(10);
